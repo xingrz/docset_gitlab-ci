@@ -1,0 +1,12 @@
+{
+    "name": ".gitlab-ci.yml",
+    "package": "gitlab-ci",
+    "index": "index.html",
+    "icon32x32": "icon32.png",
+    "externalURL": "https://docs.gitlab.com/ee/ci/yaml/",
+    "selectors": {
+        "h1": "Package",
+        "h2": "Section",
+        "h3, h4": "Command"
+    }
+}

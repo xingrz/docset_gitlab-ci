@@ -1,0 +1,47 @@
+name: nightly
+
+on:
+  push:
+    branches: [ master ]
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Jekyll
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '2.6'
+          bundler-cache: true
+
+      - name: Set up Dashing
+        run: brew install dashing
+
+      - name: Get latest GitLab source
+        run: |
+          wget -q https://gitlab.com/gitlab-org/gitlab/-/archive/master/gitlab-master.zip
+          unzip gitlab-master.zip 'gitlab-master/doc/ci/yaml/*'
+          mv gitlab-master/doc/ci/yaml .
+
+      - name: Build HTML
+        run: |
+          find yaml -name '*.md' | xargs sed -i '' 's|\.md|\.html|g'
+          bundle exec jekyll build --source yaml
+
+      - name: Build docset
+        run: |
+          dashing build --source _site
+          mkdir -p docset
+          mv gitlab-ci.docset docset/
+
+      - name: Upload docset
+        uses: actions/upload-artifact@v2
+        with:
+          name: gitlab-ci.docset
+          path: docset
