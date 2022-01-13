@@ -100,7 +100,7 @@ jobs:
           mkdir feed
           cat > feed/gitlab-ci.xml <<EOL
           <entry>
-            <version>${{ needs.source.outputs.commit }}</version>
+            <version>${{ needs.source.outputs.version }} (${{ needs.source.outputs.commit }})</version>
             <url>https://github.com/xingrz/docset_gitlab-ci/releases/download/v${{ needs.source.outputs.version }}/gitlab-ci.tgz</url>
           </entry>
           EOL
