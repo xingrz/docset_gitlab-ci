@@ -11,6 +11,9 @@ jobs:
   build:
     runs-on: macos-latest
 
+    outputs:
+      version: ${{ steps.source.outputs.version }}
+
     steps:
       - uses: actions/checkout@v2
 
@@ -24,9 +27,11 @@ jobs:
         run: brew install dashing
 
       - name: Get latest GitLab source
+        id: source
         run: |
           wget -q https://gitlab.com/gitlab-org/gitlab/-/archive/master/gitlab-master.zip
-          unzip gitlab-master.zip 'gitlab-master/doc/ci/yaml/index.md'
+          unzip gitlab-master.zip gitlab-master/VERSION gitlab-master/doc/ci/yaml/index.md
+          echo "::set-output name=version::$(cat gitlab-master/VERSION)"
           mv gitlab-master/doc/ci/yaml yaml_src
 
       - name: Build HTML
@@ -45,3 +50,25 @@ jobs:
         with:
           name: gitlab-ci.docset
           path: docset
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download docset
+        uses: actions/download-artifact@v2
+        with:
+          name: gitlab-ci.docset
+
+      - name: Build tgz archive
+        run: tar -cvzf gitlab-ci.tgz gitlab-ci.docset
+
+      - name: Publish release
+        uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          artifacts: gitlab-ci.tgz
+          commit: master
+          tag: v${{ needs.build.outputs.version }}
+          token: ${{ secrets.GITHUB_TOKEN }}
