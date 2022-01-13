@@ -26,12 +26,12 @@ jobs:
       - name: Get latest GitLab source
         run: |
           wget -q https://gitlab.com/gitlab-org/gitlab/-/archive/master/gitlab-master.zip
-          unzip gitlab-master.zip 'gitlab-master/doc/ci/yaml/*'
+          unzip gitlab-master.zip 'gitlab-master/doc/ci/yaml/index.md'
           mv gitlab-master/doc/ci/yaml .
 
       - name: Build HTML
         run: |
-          find yaml -name '*.md' | xargs sed -i '' 's|\.md|\.html|g'
+          perl -lape 's|\(([^\)]+)\.md|(https://docs.gitlab.com/ee/ci/yaml/$1.html|g' -i yaml/index.md
           bundle exec jekyll build --source yaml
 
       - name: Build docset
