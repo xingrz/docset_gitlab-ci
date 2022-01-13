@@ -3,7 +3,7 @@
     "package": "gitlab-ci",
     "index": "index.html",
     "icon32x32": "icon32.png",
-    "externalURL": "https://docs.gitlab.com/ee/ci/yaml/",
+    "externalURL": "https://docs.gitlab.com/ee/ci/",
     "selectors": {
         "h2": "Section",
         "h3, h4": "Command"

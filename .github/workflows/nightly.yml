@@ -27,16 +27,16 @@ jobs:
         run: |
           wget -q https://gitlab.com/gitlab-org/gitlab/-/archive/master/gitlab-master.zip
           unzip gitlab-master.zip 'gitlab-master/doc/ci/yaml/index.md'
-          mv gitlab-master/doc/ci/yaml .
+          mv gitlab-master/doc/ci/yaml yaml_src
 
       - name: Build HTML
         run: |
-          perl -lape 's|\(([^\)]+)\.md|(https://docs.gitlab.com/ee/ci/yaml/$1.html|g' -i yaml/index.md
-          bundle exec jekyll build --source yaml
+          perl -lape 's|\(([^\)]+)\.md|(https://docs.gitlab.com/ee/ci/yaml/$1.html|g' -i yaml_src/index.md
+          bundle exec jekyll build -s yaml_src -d yaml
 
       - name: Build docset
         run: |
-          dashing build --source _site
+          dashing build --source yaml
           mkdir -p docset
           mv gitlab-ci.docset docset/
 
