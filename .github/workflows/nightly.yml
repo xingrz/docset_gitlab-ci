@@ -49,16 +49,16 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: gitlab-ci.md
-          path: yaml_src
+          path: src
 
       - name: Build HTML
         run: |
-          perl -lape 's|\(([^\)]+)\.md|(https://docs.gitlab.com/ee/ci/yaml/$1.html|g' -i yaml_src/index.md
-          bundle exec jekyll build -s yaml_src -d yaml
+          perl -lape 's|\(([^\)]+)\.md|(https://docs.gitlab.com/ee/ci/yaml/$1.html|g' -i src/index.md
+          bundle exec jekyll build -s src -d keywords
 
       - name: Build docset
         run: |
-          dashing build --source yaml
+          dashing build --source keywords
           mkdir -p docset
           mv gitlab-ci.docset docset/
 
