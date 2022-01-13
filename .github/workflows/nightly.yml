@@ -8,11 +8,30 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: macos-latest
+  source:
+    runs-on: ubuntu-latest
 
     outputs:
-      version: ${{ steps.source.outputs.version }}
+      version: ${{ steps.clone.outputs.version }}
+      commit: ${{ steps.clone.outputs.commit }}
+
+    steps:
+      - name: Clone latest GitLab source
+        id: clone
+        run: |
+          git clone https://gitlab.com/gitlab-org/gitlab.git --depth 1
+          echo "::set-output name=version::$(cat gitlab/VERSION)"
+          echo "::set-output name=commit::$(git -C gitlab rev-parse --short HEAD)"
+
+      - name: Upload yaml doc
+        uses: actions/upload-artifact@v2
+        with:
+          name: gitlab-ci.md
+          path: gitlab/doc/ci/yaml/index.md
+
+  build:
+    needs: source
+    runs-on: macos-latest
 
     steps:
       - uses: actions/checkout@v2
@@ -26,13 +45,11 @@ jobs:
       - name: Set up Dashing
         run: brew install dashing
 
-      - name: Get latest GitLab source
-        id: source
-        run: |
-          wget -q https://gitlab.com/gitlab-org/gitlab/-/archive/master/gitlab-master.zip
-          unzip gitlab-master.zip gitlab-master/VERSION gitlab-master/doc/ci/yaml/index.md
-          echo "::set-output name=version::$(cat gitlab-master/VERSION)"
-          mv gitlab-master/doc/ci/yaml yaml_src
+      - name: Download yaml doc
+        uses: actions/download-artifact@v2
+        with:
+          name: gitlab-ci.md
+          path: yaml_src
 
       - name: Build HTML
         run: |
@@ -52,7 +69,7 @@ jobs:
           path: docset
 
   publish:
-    needs: build
+    needs: [source, build]
     runs-on: ubuntu-latest
 
     steps:
@@ -70,5 +87,5 @@ jobs:
           allowUpdates: true
           artifacts: gitlab-ci.tgz
           commit: master
-          tag: v${{ needs.build.outputs.version }}
+          tag: v${{ needs.source.outputs.version }}
           token: ${{ secrets.GITHUB_TOKEN }}
