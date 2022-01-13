@@ -89,3 +89,29 @@ jobs:
           commit: master
           tag: v${{ needs.source.outputs.version }}
           token: ${{ secrets.GITHUB_TOKEN }}
+
+  feed:
+    needs: [source, publish]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Generate Docset Feed
+        run: |
+          mkdir feed
+          cat > feed/gitlab-ci.xml <<EOL
+          <entry>
+            <version>${{ needs.source.outputs.commit }}</version>
+            <url>https://github.com/xingrz/docset_gitlab-ci/releases/download/v${{ needs.source.outputs.version }}/gitlab-ci.tgz</url>
+          </entry>
+          EOL
+
+      - name: Publish
+        uses: crazy-max/ghaction-github-pages@v2
+        with:
+          target_branch: feed
+          keep_history: true
+          allow_empty_commit: false
+          build_dir: feed
+          commit_message: "Update ${{ needs.source.outputs.version }} (${{ needs.source.outputs.commit }})"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
