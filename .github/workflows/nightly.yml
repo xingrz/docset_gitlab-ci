@@ -36,8 +36,8 @@ jobs:
       - name: Upload HTML
         uses: actions/upload-artifact@v2
         with:
-          name: keywords
-          path: keywords
+          name: yaml
+          path: yaml
 
   build:
     needs: source
@@ -52,12 +52,12 @@ jobs:
       - name: Download HTML
         uses: actions/download-artifact@v2
         with:
-          name: keywords
-          path: keywords
+          name: yaml
+          path: yaml
 
       - name: Build docset
         run: |
-          dashing build --source keywords
+          dashing build --source yaml
           mkdir -p docset
           mv gitlab-ci.docset docset/
 

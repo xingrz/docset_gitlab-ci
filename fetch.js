@@ -4,14 +4,12 @@ const { join, basename } = require('path');
 const { outputFile } = require('fs-extra');
 const { createHash } = require('crypto');
 
-const BASE = 'https://docs.gitlab.com/';
-const URL = `${BASE}/ee/ci/yaml/index.html`;
-
-const OUT_DIR = join(__dirname, 'keywords');
+const DOC_URL = `https://docs.gitlab.com/ee/ci/yaml/index.html`;
+const OUT_DIR = join(__dirname, 'yaml');
 
 (async () => {
   console.log('Loading document...');
-  const $ = cheerio.load(await http.get(URL).text());
+  const $ = cheerio.load(await http.get(DOC_URL).text());
 
   const dropdown = $('#navbarDropdown').text().match(/GitLab\.com \(([^\)]+)\)/);
   const version = dropdown[1];
@@ -24,7 +22,7 @@ const OUT_DIR = join(__dirname, 'keywords');
       continue;
     }
     if (href.attribs.href.startsWith('/assets/')) {
-      const asset = await http.get(`${BASE}${href.attribs.href}`).text();
+      const asset = await http.get(new URL(href.attribs.href, DOC_URL)).text();
       const name = basename(href.attribs.href).replace(/#.*$/, '');
       await outputFile(join(OUT_DIR, 'assets', name), asset);
       href.attribs.href = `assets/${name}`;
@@ -40,9 +38,8 @@ const OUT_DIR = join(__dirname, 'keywords');
   console.log('Rebuilding links...');
   const as = $('a[href]');
   for (const a of as) {
-    const { href } = a.attribs;
-    if (!href.startsWith('http://') && !href.startsWith('https://')) {
-      a.attribs.href = `${BASE}${href}`;
+    if (!a.attribs.href.startsWith('#')) {
+      a.attribs.href = new URL(a.attribs.href, DOC_URL).toString();
     }
   }
 
