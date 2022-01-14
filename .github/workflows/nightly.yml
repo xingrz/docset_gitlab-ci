@@ -12,22 +12,32 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      version: ${{ steps.clone.outputs.version }}
-      commit: ${{ steps.clone.outputs.commit }}
+      version: ${{ steps.fetch.outputs.version }}
+      digest: ${{ steps.fetch.outputs.digest }}
 
     steps:
-      - name: Clone latest GitLab source
-        id: clone
-        run: |
-          git clone https://gitlab.com/gitlab-org/gitlab.git --depth 1
-          echo "::set-output name=version::$(cat gitlab/VERSION)"
-          echo "::set-output name=commit::$(git -C gitlab rev-parse --short HEAD)"
+      - uses: actions/checkout@v2
 
-      - name: Upload yaml doc
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+          cache: 'npm'
+
+      - name: Install tools
+        run: npm ci
+
+      - name: Fetch and rebuild page from GitLab
+        id: fetch
+        run: |
+          node fetch.js
+          echo "::set-output name=version::$(cat VERSION)"
+          echo "::set-output name=digest::$(cat DIGEST)"
+
+      - name: Upload HTML
         uses: actions/upload-artifact@v2
         with:
-          name: gitlab-ci.md
-          path: gitlab/doc/ci/yaml/index.md
+          name: keywords
+          path: keywords
 
   build:
     needs: source
@@ -36,25 +46,14 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Set up Jekyll
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '2.6'
-          bundler-cache: true
-
       - name: Set up Dashing
         run: brew install dashing
 
-      - name: Download yaml doc
+      - name: Download HTML
         uses: actions/download-artifact@v2
         with:
-          name: gitlab-ci.md
-          path: src
-
-      - name: Build HTML
-        run: |
-          perl -lape 's|\(([^\)]+)\.md|(https://docs.gitlab.com/ee/ci/yaml/$1.html|g' -i src/index.md
-          bundle exec jekyll build -s src -d keywords
+          name: keywords
+          path: keywords
 
       - name: Build docset
         run: |
@@ -100,7 +99,7 @@ jobs:
           mkdir feed
           cat > feed/gitlab-ci.xml <<EOL
           <entry>
-            <version>${{ needs.source.outputs.version }} (${{ needs.source.outputs.commit }})</version>
+            <version>${{ needs.source.outputs.version }} (${{ needs.source.outputs.digest }})</version>
             <url>https://github.com/xingrz/docset_gitlab-ci/releases/download/v${{ needs.source.outputs.version }}/gitlab-ci.tgz</url>
           </entry>
           EOL
@@ -112,6 +111,6 @@ jobs:
           keep_history: true
           allow_empty_commit: false
           build_dir: feed
-          commit_message: "Update ${{ needs.source.outputs.version }} (${{ needs.source.outputs.commit }})"
+          commit_message: "Update ${{ needs.source.outputs.version }} (${{ needs.source.outputs.digest }})"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

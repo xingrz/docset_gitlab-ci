@@ -1,9 +1,8 @@
 .DS_Store
+node_modules
 
-/yaml
-/_site
-
-.jekyll-cache
-Gemfile.lock
+/keywords
+/VERSION
+/DIGEST
 
 *.docset
